@@ -67,9 +67,9 @@ def subject(request, numri):
         subject.save()
 
         # return successful message, Old dhe new
-        JsonResponse({"message":"Object Updated succesfully"})
+        return JsonResponse({"message":"Object Updated succesfully"})
 
-        if request.method == "DELETE":
+    if request.method == "DELETE":
             subject = Subject.objects.get(id=numri)
             if subject:
                 subject.delete()
@@ -80,17 +80,18 @@ def subject(request, numri):
 
 def study_session_list(request):
     if request.method == "GET":
-        ss_qs = StudySession.objects.all().values("id", 
-                                                  "subject",
-                                                  "datetime",
-                                                  "duration_minutes",
-                                                  "notes")
+        ss_qs = StudySession.objects.select_related('subject').all()
         ss_list = []
-        # Optimize
+        
         for ss in ss_qs:
-            subject = Subject.objects.get(id=ss.get("subject"))
-            ss["subject"] = subject.name
-            ss_list.append(ss)
+            ss_list.append({
+                "id": ss.id,
+                "subject": ss.subject.name,
+                "subject_id": ss.subject.id,
+                "datetime": ss.datetime.isoformat() if ss.datetime else None,
+                "duration_minutes": ss.duration_minutes,
+                "notes": ss.notes
+            })
         return JsonResponse(ss_list, safe=False)
     return JsonResponse({"Error":"Method not allowed."})
 
@@ -98,14 +99,18 @@ def study_session_list(request):
 @csrf_exempt
 def study_session(request, numri):
     if request.method == "GET":
-        ss = StudySession.objects.get(id=numri)
+        try:
+            ss = StudySession.objects.get(id=numri)
+        except StudySession.DoesNotExist:
+            return JsonResponse({"error": "Study Session not found"}, status=404)
 
         ss_dict = {
-            "Id": ss.id,
-            "Subject name": ss.subject.name,
-            "Date time": ss.datetime,
-            "Duration minutes": ss.duration_minutes,
-            "Notes": ss.notes
+            "id": ss.id,
+            "subject_name": ss.subject.name,
+            "subject_id": ss.subject.id,
+            "datetime": ss.datetime.isoformat() if ss.datetime else None,
+            "duration_minutes": ss.duration_minutes,
+            "notes": ss.notes
         }
 
         return JsonResponse(ss_dict, safe=False)
@@ -117,16 +122,24 @@ def study_session(request, numri):
         except json.JSONDecodeError:
             return JsonResponse({"error": "Invalid JSON"}, status=400)
         
-        subject = data.get("subject")
-        datetime = data.get("datetime", datetime.now())
+        subject_id = data.get("subject")
+        session_datetime = data.get("datetime")
         duration_minutes = data.get("duration_minutes", 60)
         notes = data.get("notes", "")
 
+        # Get the Subject object
+        try:
+            subject_obj = Subject.objects.get(id=subject_id)
+        except Subject.DoesNotExist:
+            return JsonResponse({"error": "Subject not found"}, status=404)
+
         # Duhet krijuar objekti ne db
-        ss = StudySession.objects.create(subject=subject, 
-                                         datetime=datetime,
-                                         duration_minutes=duration_minutes,
-                                         notes=notes)
+        ss = StudySession.objects.create(
+            subject=subject_obj, 
+            datetime=session_datetime,
+            duration_minutes=duration_minutes,
+            notes=notes
+        )
 
         # Dergo mesazh suksesi
         return JsonResponse({"message":"Study Session was created succesfully"})
@@ -138,18 +151,22 @@ def study_session(request, numri):
         except json.JSONDecodeError:
             return JsonResponse({"error": "Invalid JSON"}, status=400)
         
-        subject = data.get("subject", None)
-        datetime = data.get("datetime", None)
+        subject_id = data.get("subject", None)
+        session_datetime = data.get("datetime", None)
         duration_minutes = data.get("duration_minutes", None)
         notes = data.get("notes", None)
 
         # Duhet marr objekti nga db me id
         ss = StudySession.objects.get(id=numri)
         # Duhet ndryshuar name dhe description
-        if subject:
-            ss.subject = subject
-        if datetime:
-            ss.datetime = datetime
+        if subject_id:
+            try:
+                subject_obj = Subject.objects.get(id=subject_id)
+                ss.subject = subject_obj
+            except Subject.DoesNotExist:
+                return JsonResponse({"error": "Subject not found"}, status=404)
+        if session_datetime:
+            ss.datetime = session_datetime
         if duration_minutes:
             ss.duration_minutes = duration_minutes
         if notes:
@@ -158,13 +175,13 @@ def study_session(request, numri):
         ss.save()
 
         # return successful message, Old dhe new
-        JsonResponse({"message":"Object Updated succesfully"})
+        return JsonResponse({"message":"Object Updated succesfully"})
 
-        if request.method == "DELETE":
-            ss = StudySession.objects.get(id=numri)
-            if ss:
-                ss.delete()
-                return JsonResponse({"message": "Deleted succesfully"})
-            return JsonResponse({"Error": "Subject not found"})
+    if request.method == "DELETE":
+        ss = StudySession.objects.get(id=numri)
+        if ss:
+            ss.delete()
+            return JsonResponse({"message": "Deleted succesfully"})
+        return JsonResponse({"Error": "Study Session not found"})
 
     return JsonResponse({"Error":"Method not allowed."})
