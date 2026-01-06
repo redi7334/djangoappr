@@ -185,3 +185,54 @@ def study_session(request, numri):
         return JsonResponse({"Error": "Study Session not found"})
 
     return JsonResponse({"Error":"Method not allowed."})
+
+# Krijo endpoint te ri GET, me url /total-time/
+# Ku useri do te japi id e nje subjecti
+# Dhe do te marri total time te shpenzuar ne study sessions per ate subject
+def total_time(request, id):
+    if request.method == "GET":
+        try:
+            subject = Subject.objects.get(id=id)
+        except Subject.DoesNotExist:
+            return JsonResponse({"Error":"Subject not found"})
+        
+        # Duhet te marrim duration_minutes nga Study Session
+        ss_qs = StudySession.objects.filter(subject=subject)
+
+        # For loop te mbledhi kohen dhe do printoj totalin
+        sum_total_time = 0 
+        for ss in ss_qs:
+            sum_total_time = sum_total_time + ss.duration_minutes
+        
+        # Return Total time spent on a subject
+        return JsonResponse({"Total Time": sum_total_time})
+    
+def search_by_date(request, date_string):
+    if request.method == "GET":
+        # Supozojm qe date_string eshte 2025-12-10 YYYY-MM-DD
+        if int(date_string[1:4]) > 2100:
+            return JsonResponse({"Error":"Invalid year"})
+        datetime_search = datetime.fromisoformat(date_string)
+        try:
+            ss_qs = StudySession.objects.filter(datetime__year=datetime_search.year,
+                                                datetime__month=datetime_search.month,
+                                                datetime__day=datetime_search.day)
+        except StudySession.DoesNotExist:
+            return JsonResponse({"Error":"StudySession not found"})
+        
+        ss_list = []
+        for ss in ss_qs:
+            print("ERROR ",ss)
+            ss_list.append({
+                "id": ss.id,
+                "subject": ss.subject.name,
+                "subject_id": ss.subject.id,
+                "datetime": ss.datetime.isoformat() if ss.datetime else None,
+                "duration_minutes": ss.duration_minutes,
+                "notes": ss.notes
+            })
+        return JsonResponse(ss_list, safe=False)
+
+        
+
+    
