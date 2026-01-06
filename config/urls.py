@@ -10,7 +10,7 @@ from core.views import (
 )
 
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 
 urlpatterns = [
     path('', index, name='index'),  # Frontend home page
@@ -21,5 +21,6 @@ urlpatterns = [
     path('study-session-list/', study_session_list),
     path('study-session/<int:numri>/', study_session),
     path('total-time/<int:id>/', total_time),
-    path('search-by-date/<str:date_string>/', search_by_date)
+    path('search-by-date/<str:date_string>/', search_by_date),
+    path('drf/', include("drf.urls"))
 ]
