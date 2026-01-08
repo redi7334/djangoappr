@@ -200,7 +200,7 @@ def total_time(request, id):
         ss_qs = StudySession.objects.filter(subject=subject)
 
         # For loop te mbledhi kohen dhe do printoj totalin
-        sum_total_time = 0 
+        sum_total_time = 0
         for ss in ss_qs:
             sum_total_time = sum_total_time + ss.duration_minutes
         
@@ -210,9 +210,11 @@ def total_time(request, id):
 def search_by_date(request, date_string):
     if request.method == "GET":
         # Supozojm qe date_string eshte 2025-12-10 YYYY-MM-DD
-        if int(date_string[1:4]) > 2100:
+        if int(date_string[:4]) > 2100:
             return JsonResponse({"Error":"Invalid year"})
+        
         datetime_search = datetime.fromisoformat(date_string)
+
         try:
             ss_qs = StudySession.objects.filter(datetime__year=datetime_search.year,
                                                 datetime__month=datetime_search.month,
@@ -222,7 +224,6 @@ def search_by_date(request, date_string):
         
         ss_list = []
         for ss in ss_qs:
-            print("ERROR ",ss)
             ss_list.append({
                 "id": ss.id,
                 "subject": ss.subject.name,
