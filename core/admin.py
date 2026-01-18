@@ -9,4 +9,5 @@ class SubjectAdmin(admin.ModelAdmin):
 
 admin.site.register(StudySession)
 class StudySessonAdmin(admin.ModelAdmin):
-    list_display = ("id", "subject", "date")
+    list_display = ("id", "subject", "datetime")
+    

@@ -9,7 +9,8 @@ class Subject(models.Model):
         return self.name
 
 class StudySession(models.Model):
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    Subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
     datetime = models.DateTimeField(default=datetime.now())
     duration_minutes = models.IntegerField()
     notes = models.TextField(blank=True)
+    
