@@ -22,5 +22,4 @@ urlpatterns = [
     path('study-session/<int:numri>/', study_session),
     path('total-time/<int:id>/', total_time),
     path('search-by-date/<str:date_string>/', search_by_date),
-    path('drf/', include("drf.urls"))
 ]
