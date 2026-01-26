@@ -20,8 +20,8 @@ class SubjectTests(APITestCase):
         url = reverse("all-subjects")
         response = self.client.get(url)
 
-        self.assertEqual(response.data[0]["id"], 1)
-        self.assertEqual(response.data[0]["description"], "Test Description")
+        self.assertEqual(response.data[0]["id"], self.subject1.id)
+        self.assertEqual(response.data[0]["description"], self.subject1.description)        
 
     def test_all_subjects_post(self):
         payload = {"name":"Success", "description": "Success"}

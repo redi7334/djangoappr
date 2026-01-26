@@ -215,16 +215,12 @@ def search_by_date(request, date_string):
         
         datetime_search = datetime.fromisoformat(date_string)
 
-        try:
-            ss_qs = StudySession.objects.filter(datetime__year=datetime_search.year,
-                                                datetime__month=datetime_search.month,
-                                                datetime__day=datetime_search.day)
-        except StudySession.DoesNotExist:
-            return JsonResponse({"Error":"StudySession not found"})
+        ss_qs = StudySession.objects.filter(datetime__year=datetime_search.year,
+                                            datetime__month=datetime_search.month,
+                                            datetime__day=datetime_search.day)
         
         ss_list = []
         for ss in ss_qs:
-            print("ERROR ",ss)
             ss_list.append({
                 "id": ss.id,
                 "subject": ss.subject.name,
@@ -233,6 +229,8 @@ def search_by_date(request, date_string):
                 "duration_minutes": ss.duration_minutes,
                 "notes": ss.notes
             })
+        if ss_list == []:
+            return JsonResponse({"Error": "StudySession not found"})            
         return JsonResponse(ss_list, safe=False)
     
     
