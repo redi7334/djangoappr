@@ -49,7 +49,13 @@ class StudySessionTests(TestCase):
             duration_minutes=60,
             notes="Test Description"
         )
-
+        self.ss2 = StudySession.objects.create(
+            subject=self.subject1,
+            datetime="2025-12-12",
+            duration_minutes=60,
+            notes="Test Description"
+        )
+        
     def test_search_date_invalid_year(self):
         c = Client()
         response = c.get(f"/search-by-date/3000-12-12/")
@@ -64,3 +70,16 @@ class StudySessionTests(TestCase):
         c = Client()
         response = c.get(f"/total-time/999/")
         self.assertEqual(response.json(), {"Error":"Subject not found"})
+
+    def test_total_time(self):
+        c = Client()
+        subject_id = self.subject1.id
+        response = c.get(f"/total-time/{subject_id}/")
+
+        self.assertEqual(response.json()["Total Time"],120)
+
+    def test_total_time_no_ss(self):
+        c = Client()
+        new_subject = Subject.objects.create(name="Test 2",description="Test 2")
+        response = c.get(f"/total-time/{new_subject.id}/")
+        self.assertEqual(response.json()["Total Time"],120)

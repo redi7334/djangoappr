@@ -80,7 +80,7 @@ def subject(request, numri):
 
 def study_session_list(request):
     if request.method == "GET":
-        ss_qs = StudySession.objects.select_related('subject').all()
+        ss_qs = StudySession.objects.select_related('Subject').all()
         ss_list = []
         
         for ss in ss_qs:
@@ -196,16 +196,23 @@ def total_time(request, id):
         except Subject.DoesNotExist:
             return JsonResponse({"Error":"Subject not found"})
         
+        
         # Duhet te marrim duration_minutes nga Study Session
+        
         ss_qs = StudySession.objects.filter(subject=subject)
 
         # For loop te mbledhi kohen dhe do printoj totalin
         sum_total_time = 0
         for ss in ss_qs:
             sum_total_time = sum_total_time + ss.duration_minutes
+    
+        if not ss_qs:
+            return JsonResponse({"Error":"Subject has no study sessions"})
         
         # Return Total time spent on a subject
         return JsonResponse({"Total Time": sum_total_time})
+    
+    
     
 def search_by_date(request, date_string):
     if request.method == "GET":
