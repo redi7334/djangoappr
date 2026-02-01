@@ -1,37 +1,47 @@
 from rest_framework.decorators import api_view
+from adrf.decorators import api_view as async_api_view
 from rest_framework.response import Response
 from datetime import datetime
 from rest_framework import viewsets
+from django.db.models import Sum
 
 from core.models import Subject, StudySession
 from .serializers import SubjectSerializer, StudySessionSerializer
 
 from .pagination import StudySessionPagination
 
+from adrf.views import APIView
+from asgiref.sync import sync_to_async
+
 @api_view(["GET"])
 def test2(request):
     return Response({"message":"test"})
 
-@api_view(["GET", "POST"])
-def all_subjects(request):
-    if request.method == "GET":
+class SubjectListAsync(APIView):
+    """
+    Async Class-based view for Subject list and creation.
+    """
+    async def get(self, request):
         qs = Subject.objects.all()
-        serializer = SubjectSerializer(qs, many=True)
-        return Response(serializer.data)
+        data = []
+        async for subject in qs:
+            data.append(SubjectSerializer(subject).data)
+        return Response(data)        
 
-    if request.method == "POST":
+    async def post(self, request):
         serializer = SubjectSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        
-@api_view(["GET"])
-def subject(request, numri):
-        subject = Subject.objects.get(id=numri)
-        serializer = SubjectSerializer(subject, many=False)
+            await sync_to_async(serializer.save)()
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+@async_api_view(["GET"])
+async def subject(request, numri):
+        subject = await Subject.objects.aget(id=numri)
+        serializer = SubjectSerializer(subject)
         return Response(serializer.data)
 
-@api_view(["GET"])
+@async_api_view(["GET"])
 async def study_session(request, numri):
      study_session = await StudySession.objects.aget(id=numri)
      serializer = StudySessionSerializer(study_session)
@@ -86,19 +96,23 @@ def study_session_list(request):
         #Perpiquni ta beni me nje query parameter, maybe nje string=- YYYY-MM-DD
         #.startswith("-") string slicing
         
-@api_view(["GET"])
-def total_time_all_subjects(request):
-    if request.method == "GET":
-        subject_qs = Subject.objects.all()
-        list1=[]
-        for subject in subject_qs:
-            study_sessions = StudySession.objects.filter(subject=subject)
-            total_time = sum(session.duration_minutes for session in study_sessions)
-            dict1 = {"id":subject.id,"Total Time":total_time}
+class TotalTimeAllSubjectsAsync(APIView):
+    """
+    Async Class-based view for calculating total time per subject.
+    """
+    async def get(self, request):
+        # Annotate each subject with the total duration of its study sessions
+        subject_qs = Subject.objects.annotate(
+            total_time=Sum('studysession__duration_minutes')
+        ).values('id', 'total_time')
+        
+        list1 = []
+        async for subject in subject_qs:
+            dict1 = {"id": subject["id"], "Total Time": subject["total_time"] or 0}
             list1.append(dict1)
+            
         return Response(list1)
-        #[{{"id":1},{"total time":120}},{{"id":2},{"total time":140}}]
-        #[{1:120},{2:80}]
+
                 
 class SubjectViewset(viewsets.ModelViewSet):
     queryset = Subject.objects.all()

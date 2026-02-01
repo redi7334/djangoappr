@@ -5,3 +5,6 @@ sqlparse==0.5.2
 tzdata==2024.2
 djangorestframework
 httpx
+uvicorn
+gunicorn
+adrf

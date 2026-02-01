@@ -55,7 +55,23 @@ class StudySessionTests(APITestCase):
 
 
     def test_total_time_all_subjects(self):
+           # Create second session for the same subject
+        StudySession.objects.create(
+            subject=self.subject,
+            datetime="2026-01-23",
+            duration_minutes=45,
+            notes="bonus test"
+        )
+        
         url = reverse("total-time-all-subjects")
         response = self.client.get(url)
-        breakpoint()
-        self.assertEqual(response.data[0]["Total Time"],self.study_session1.duration_minutes)
+
+        
+        # Total should be 60 (from setUp) + 45 = 105
+        expected_total = 105
+        
+        # Find the dictionary for our subject
+        subject_data = next(item for item in response.data if item["id"] == self.subject.id)
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(subject_data["Total Time"], expected_total)
