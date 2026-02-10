@@ -14,6 +14,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='studysession',
             name='datetime',
-            field=models.DateTimeField(default=datetime.datetime(2026, 1, 13, 19, 38, 27, 817145)),
+            field=models.DateTimeField(default=datetime.datetime(2026, 2, 3, 19, 54, 9, 75592)),
         ),
     ]
